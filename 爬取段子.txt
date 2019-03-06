@@ -1,0 +1,44 @@
+import requests
+from bs4 import BeautifulSoup
+
+class DZ():
+    def __init__(self,url,pageIndex):
+        self.url=url+str(pageIndex)
+        self.headers={'User_Agent':'Mozilla/4.0(compatible;MSIE 5.5;Windows NT)'}
+
+    def get_one_html(self):
+        res=requests.get(self.url,self.headers)
+        html=res.text
+        return html
+
+    def get_all_h2(self):
+        for i in range(1,2):
+            html=self.get_one_html()
+            soup=BeautifulSoup(html,'lxml')
+            all_h2=soup.find_all('h2')
+        return all_h2
+
+    def get_content(self):
+        all_a=[]
+        all_title=[]
+        all_h2=self.get_all_h2()
+        for h2 in all_h2:
+            all_a.append(h2.find('a').get('href'))
+            all_title.append(h2.find('a').get('title'))
+        for (title,a) in zip(all_title,all_a):
+            print(title,a)
+            with open('joke.txt','a+',encoding='utf-8') as file:
+                file.write('±ÍÃ‚£∫'+title[:-4]+'\n')
+            res=requests.get(a,headers=self.headers)
+            html=res.text
+            soup=BeautifulSoup(html,'lxml')
+            all_p=soup.find('article',class_='article-content').find_all('p')
+            for p in all_p:
+                with open('joke.txt','a+',encoding='utf-8') as f:
+                    f.write(p.text+'\n')
+
+if __name__ == '__main__':
+    url='http://duanziwang.com/category/duanzi/page/'
+    for i in range(1,100):
+        app=DZ(url,i)
+        app.get_content()

@@ -1,0 +1,37 @@
+import urllib.request
+from headers import headers
+import json
+from lxml import etree
+import re
+import requests
+from bs4 import BeautifulSoup
+
+
+def getUrlList():
+    req=urllib.request.Request('https://mm.taobao.com/tstar/search/tstar_model.do?_input_charset=utf-8')
+    html=urllib.request.urlopen(req).read().decode('gbk').encode('utf-8').decode('utf-8')
+    dd=json.loads(html)
+    return dd['data']['searchDOList']
+
+def getAlbumList(userid):
+    req=urllib.request.Request('https://mm.taobao.com/self/album/open_album_list.htm?_charset=utf-8&user_id%%20=%s'%userid)
+    html = urllib.request.urlopen(req).read().decode('gbk').encode('utf-8').decode('utf-8')
+    reg=r'class="mm-first" href="//(.*?)"'
+    return re.findall(reg,html)[::2]
+
+
+for i in getUrlList():
+    userId=i['userId']
+    for n in getAlbumList(userId):
+        print('https://'+n)
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,68 @@
+#_*_ coding:utf-8 _*_
+import re
+import urllib.request
+import urllib,requests
+from tkinter import *
+from tkinter import scrolledtext
+import threading
+import time
+
+
+url_name=[]
+a=1
+def get():
+    global a
+    hd={'User-Agent':'Mozilla/4.0(compatible;MSIE 5.5;Windows NT)'}
+    url='http://www.budejie.com/video/'+str(a)
+    html=requests.get(url,headers=hd).text
+    url_content=re.compile(r'(div class="j-r-list-c">.*?</div>.*?</div>)',re.S)
+    url_contents=re.findall(url_content,html)
+    for i in url_contents:
+        url_reg=r'data-mp4="(.*?)">'
+        url_items=re.findall(url_reg,i)
+        #print(url_items)
+        if url_items:
+            name_reg=re.compile(r'<a href="/detail-.{8}?.html">(.*?)</a>',re.S)
+            name_items=re.findall(name_reg,i)
+            #print(name_items[0])
+            for i,k in zip(name_items,url_items):
+                url_name.append([i,k])
+    return url_name
+
+
+def write():
+    global a
+    while a<100:
+        url_name=get()
+        a+=1
+
+        for i in url_name:
+            urllib.request.urlretrieve(i[1],'./result/%s.mp4'%(i[0]))                           #.decode['utf-8'].encode['gbk']
+            text.insert(END,i[1]+'\n'+i[0]+'\n')
+            url_name.pop(0)
+            id+=1
+
+def start():
+    th=threading.Thread(target=write)
+    th.start()
+
+
+
+
+root=Tk()
+root.title('¸ß¼¶ÅÀ³æ')
+text=scrolledtext.ScrolledText(root,font=('Î¢ÈíÑÅºÚ',12))
+text.grid()
+button=Button(root,text='¿ªÊ¼ÅÀÈ¥',font=('Î¢ÈíÑÅºÚ',12),command=start)
+button.grid()
+varl=StringVar()
+label=Label(root,font=('Î¢ÈíÑÅºÚ',12),fg='red',textvar=varl)
+label.grid()
+varl.set('ÐÜÃ¨ÒÑ×¼±¸...')
+root.mainloop()
+
+
+
+
+
+

@@ -1,0 +1,67 @@
+import time
+from multiprocessing.dummy import Pool as Threadpool
+import requests
+import re
+import os
+from bs4 import BeautifulSoup
+import json
+import lxml
+
+
+def get_response(url):
+    html=requests.get(url,headers=headers).text
+    selector=lxml.etree.HTML(html)
+    product_list=selector.xpath('//*[@id="J_goodsList"]/ul/li')
+    for product in product_list:
+        try:
+            sku_id=product.xpath('@data-sku')[0]
+            product_url='https://item.jd.com/{}.html'.format(str(sku_id))
+            get_data(product_url)
+        except Exception as e:
+            print(e)
+
+
+
+
+def get_data(url):
+    product_dict={}
+    html=requests.get(url,headers=headers)
+    selector=lxml.etree.HTML(html.text)
+    product_infos=selector.xpath('//ul[@class="parameter2 p-parameter-list"]')  #parameter2 p-parameter-list
+    for product in product_infos:
+        product_number=product.xpath('li[2]/@title')[0]
+        product_price = get_product_price(product_number)
+        product_dict['商品名称']=product.xpath('li[1]/@title')[0]
+        product_dict['商品价格']=product_price
+        product_dict['商品编号']=product.xpath('li[2]/@title')[0]
+        product_dict['商品信息'] = product.xpath('li[4]/@title')[0]
+        product_dict['商品信息'] = product.xpath('li[5]/@title')[0]
+        product_dict['机身信息'] = product.xpath('li[7]/@title')[0]
+        product_dict['操作信息'] = product.xpath('li[8]/@title')[0]
+        print(product_dict)
+
+
+
+
+
+
+def get_product_price(sku):
+    price_url='https://p.3.cn/prices/mgets?&skuIds=J_{}'.format(str(sku))
+    response=requests.get(price_url,headers=headers).content
+    response_json=json.loads(response)
+    for info in response_json:
+        return info.get('p')
+
+
+if __name__ == '__main__':
+    headers={
+        'User - Agent': 'Mozilla / 5.0(Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+    }
+    urls=['https://search.jd.com/Search?keyword=%E6%89%8B%E6%9C%BA&enc=utf-8&qrst=1&rt=1&stop=1&vt=2&wq=%E6%89%8B%E6%9C%BA&cid2=653&cid3=655&page={}&s=55&click=0'.format(page) for page in range(1,100,2)]
+    pool=Threadpool(2)
+    start_time=time.time()
+    pool.map(get_response,urls)
+    pool.close()
+    pool.join()
+    end_time=time.time()
+    print('用时{}'.format(str(end_time-start_time)))
